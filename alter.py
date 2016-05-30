@@ -8,7 +8,7 @@ class Alternator(object):
 
     As _Call and CallData objects are immutable this class simplifies creation of new Calls and CallDatas. It may be
     useful for reorganizing and formatting VCF records, e.g. moving important values from custom format fields
-    to more common fields which are reckognized by most software. (E.g. CGA_CEHQ to HQ in case of Complete Genomics
+    to more common fields which are recognized by most software. (E.g. CGA_CEHQ to HQ in case of Complete Genomics
     VCF files."""
 
     def __init__(self, reader_handle):
