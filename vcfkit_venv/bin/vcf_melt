@@ -32,7 +32,6 @@ def flatten(x):
         x = ','.join(map(str, x))
     return x
 
-
 for record in reader:
     info_row = [flatten(record.INFO.get(x, None)) for x in infos]
     fixed = [record.CHROM, record.POS, record.REF, record.ALT, record.ID]

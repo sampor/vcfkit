@@ -2,7 +2,7 @@
 import argparse
 import statistics
 
-from _vcf import Reader
+from vcf import Reader
 import locale
 
 enc = locale.getpreferredencoding()

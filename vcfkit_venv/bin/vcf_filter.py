@@ -6,7 +6,6 @@ import pkg_resources
 import vcf
 from vcf.parser import _Filter
 
-
 def create_filt_parser(name):
     parser = argparse.ArgumentParser(description='Parser for %s' % name,
                                      add_help=False
@@ -14,7 +13,6 @@ def create_filt_parser(name):
     parser.add_argument('rest', nargs=argparse.REMAINDER, help=argparse.SUPPRESS)
 
     return parser
-
 
 def create_core_parser():
     # we have to use custom formatted usage, because of the
@@ -45,7 +43,6 @@ def create_core_parser():
     parser.add_argument('rest', nargs=argparse.REMAINDER, help=argparse.SUPPRESS)
 
     return parser
-
 
 # argument parsing strategy
 # loading a script given at the command line poses a difficulty
@@ -167,6 +164,5 @@ def main():
             # FIXME: is this good idea?
             if record.FILTER is None and not drop_filtered: record.FILTER = 'PASS'
             output.write_record(record)
-
 
 if __name__ == '__main__': main()

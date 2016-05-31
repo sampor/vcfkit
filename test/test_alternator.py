@@ -1,5 +1,6 @@
-import alter
 import unittest
+
+from core import alter
 
 try:
     from vcf.parser import Reader
