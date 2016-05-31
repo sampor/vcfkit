@@ -121,3 +121,4 @@ if __name__ == '__main__':
 in_vcf = '/home/daniel/ielis/vcfkit/input/FH327.snp.vcf'
 alt = Alternator(Reader(filename=in_vcf))
 fmt = 'GT:AD:DP:PL'
+r = alt.rhandle
