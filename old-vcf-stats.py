@@ -10,7 +10,7 @@ VERSION = 'develop'
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(prog='vcf-stats.py', description='Get useful stats from VCF file')
+    parser = argparse.ArgumentParser(prog='old-vcf-stats.py', description='Get useful stats from VCF file')
     parser.add_argument("input", help="VCF to be examined")
     parser.add_argument("-v", "--version", action='version', version='%(prog)s' + VERSION)
     arguments = parser.parse_args()
@@ -19,7 +19,7 @@ def parse_args():
 
 def _parse_args():
     """Create dummy args namespace"""
-    parser = argparse.ArgumentParser(prog='test-vcf-stats.py', description="Dummy args")
+    parser = argparse.ArgumentParser(prog='test-old-vcf-stats.py', description="Dummy args")
     parser.add_argument("in", help="VCF to be examined")
     parser.add_argument("-v", "--version", action='version', version='%(prog)s' + VERSION)
     arguments = parser.parse_args(['/home/daniel/git/vcf-stats-ielis/vcf/test/example-4.2.vcf'])

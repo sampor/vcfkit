@@ -114,6 +114,17 @@ class Alternator(object):
 
         return samp_data
 
+    def add_header_line(self, meta_type, id=None, number=None, type=None, description=None):
+        """
+
+        :param id:
+        :param number:
+        :param type:
+        :param description:
+        :return:
+        """
+        # TODO - dopln metodu na upravenie pola v ramci headeru
+        raise NotImplemented
 
 if __name__ == '__main__':
     pass
