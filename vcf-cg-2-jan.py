@@ -100,8 +100,3 @@ if __name__ == '__main__':
     args = parse_args()
     cg2j = CompleteGenomics2Jannovar(args.in_vcf, args.out_vcf)
     cg2j.run()
-
-c = CompleteGenomics2Jannovar(in_vcf, out_vcf)
-
-r = next(c.reader)
-# c._update_record(r)

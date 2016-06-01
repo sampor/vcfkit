@@ -1,3 +1,4 @@
+from . import util
 cache = {}
 loc_cache = {}
 
@@ -22,17 +23,16 @@ class VcfStats(object):
         # open VCF & parse header lines
         self.r_handle = reader_handle
         self.nominal, self.ordinal = self._parse_header()
-        self.data = None
 
     def run(self, interest):
         assert isinstance(interest, list), "Fields must be passed in a list!"
-        # TODO - sanity check - ci su zadane tagy definovane v VCF headeri
-        self.data = {key: list() for key in interest}
+        # check tag presence in VCF
+        self._check_tags(interest)
+        data = {key: list() for key in interest}
         for record in self.r_handle:
             values = self._get_values(interest, record)
-            [self.data[k].append(v) for k, v in values.items()]
-
-            # TODO - analyse self.data!
+            [data[k].append(v) for k, v in values.items()]
+        return data
 
     def _parse_header(self):
         """Classify fields from FILTER, INFO and FORMAT columns as nominal or ordinal.
@@ -50,27 +50,39 @@ class VcfStats(object):
             if not tag_dict:
                 continue
             for tag_id, tag_vals in tag_dict.items():
-                t = getattr(tag_vals, 'type')
-                if t == 'Integer':
-                    ordinal.append(tag_id)
-                elif t == 'Float':
-                    ordinal.append(tag_id)
-                elif t == 'String':
-                    nominal.append(tag_id)
-                elif t == 'Flag':
-                    nominal.append(tag_id)
-                else:
-                    raise StatsException(
-                        "Problem parsing tag {} from {} field! The type is neither Integer nor String!".format(tag_id,
-                                                                                                               k))
+                try:
+                    t = getattr(tag_vals, 'type')
+                    if t == 'Integer':
+                        ordinal.append(tag_id)
+                    elif t == 'Float':
+                        ordinal.append(tag_id)
+                    elif t == 'String':
+                        nominal.append(tag_id)
+                    elif t == 'Flag':
+                        nominal.append(tag_id)
+                    else:
+                        raise StatsException(
+                            "Problem parsing tag {} from {} field! "
+                            "The type is neither Integer nor String!".format(tag_id, k))
+                except AttributeError:
+                    util.eprint("Tag {} is neither ordinal or nominal. Skipping..".format(tag_id))
+
         return nominal, ordinal
 
     def _get_values(self, tags, record):
+        """Return dictionary with tags and their values"""
         loc = [self._localise(x) for x in tags]
         res = {t: self._get_value(t, l, record) for t, l in zip(tags, loc)}
         return res
 
     def _get_value(self, tag, loc, record, missing=None):
+        """Return tag value from _Record. Return missing if tag not present in _Record.
+        :param tag: Tag string to be found
+        :param loc: Place in VCF _Record (filters, formats, infos)
+        :param record: VCF _Record object
+        :param missing: Return this value if Tag is not present in _Record
+        :return: Tag value or missing
+        """
         if loc == 'infos':
             # Get dictionary with vcf INFO fields
             i = getattr(record, INV_VCF_FIELD_TYPES[loc])
@@ -112,6 +124,11 @@ class VcfStats(object):
                     return loc_cache[tag]
 
             raise StatsException("This shouldn't happen!")
+
+    def _check_tags(self, interest):
+        for tag in interest:
+            if tag not in self.nominal + self.ordinal:
+                raise StatsException("Tag {} is not present in VCF header!".format(tag))
 
 
 class StatsException(Exception):

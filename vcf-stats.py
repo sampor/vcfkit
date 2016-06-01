@@ -1,81 +1,67 @@
-#!./venv/bin/python
 import argparse
-import statistics
-
+import os
+import sys
+from core.plot import create_boxplot, create_piechart, create_cumulative_distribution
+from core.stats import get_instance
 from vcf import Reader
-import locale
-
-enc = locale.getpreferredencoding()
-VERSION = 'develop'
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(prog='vcf-stats.py', description='Get useful stats from VCF file')
-    parser.add_argument("input", help="VCF to be examined")
-    parser.add_argument("-v", "--version", action='version', version='%(prog)s' + VERSION)
-    arguments = parser.parse_args()
-    return arguments
+    VERSION = 'develop'
+    parser = argparse.ArgumentParser(description="Generate PDF with useful statistics from VCF file",
+                                     prog="vcf-stats.py")
+    parser.add_argument("in_vcf", help="Input VCF file", default=sys.stdin)
+    parser.add_argument("pdf_path", help="Write PDF report to this path")
+    parser.add_argument("-t", "--tags", help="VCF Format, Filter or Info tags to be analyzed",
+                        default='GT,GQ,DP')  # TODO check ci zobrazuje default polia v CMD line
+    parser.add_argument("-v", "--version", action='version', version='%(prog)s ' + VERSION)
+    return parser.parse_args()
 
 
-def _parse_args():
-    """Create dummy args namespace"""
-    parser = argparse.ArgumentParser(prog='test-vcf-stats.py', description="Dummy args")
-    parser.add_argument("in", help="VCF to be examined")
-    parser.add_argument("-v", "--version", action='version', version='%(prog)s' + VERSION)
-    arguments = parser.parse_args(['/home/daniel/git/vcf-stats-ielis/vcf/test/example-4.2.vcf'])
-    return arguments
+class Statter(object):
+    def __init__(self, in_file, pdf_path):
+        assert os.path.exists(in_file), "File {} does not exist!".format(in_file)
+        self._in_file = in_file
+        self._pdf_path = pdf_path
+        self._reader = Reader(filename=self._in_file)
+        self._vs = get_instance(self._reader)
+        self._data = self._vs.run()
+
+    def run(self):
+        # TODO - continue here!
+        raise NotImplemented
 
 
-def get_quals(record):
-    return [s.data.GQ for s in record.samples]
+# fpath = 'test/files/XYZ123.vcf'
+# ordfp = 'figs/GTs.png'
+# cdist = 'figs/GQcdf.png'
+# ddist = 'figs/DPcdf.png'
+# nomfp = 'figs/GQs.png'
+# orddp = 'figs/DPs.png'
+# large = 'input/E6.vcf'
+# tags = ['GT', 'DP', 'GQ']
+#
+# r = Reader(filename=large)
+# vs = get_instance(r)
+# data = vs.run(tags)
+#
+# od = data['GQ']
+# lod = ['GQ']
+# dp = data['DP']
+# ldp = ['DP']
+# title = 'E6 Genotype Quality'
+# create_boxplot(ordfp, od, lod, title=title)
+# title = 'E6 Depth'
+# create_boxplot(orddp, dp, ldp, title=title)
+# title = 'E6 cumulative distribution of Genotype Quality'
+# create_cumulative_distribution(cdist, od, title=title)
+# title = 'E6 cumulative distribution of Depth'
+# create_cumulative_distribution(ddist, dp, title=title)
+#
+# nd = data['GT']
+# title = 'E6 Genotype piechart'
+# create_piechart(nomfp, nd, title=title)
+#
 
-
-def parse_vcf_quals(fpath):
-    """Get dict with  of Vcf Genotype Quals, list per sample"""
-    reader = Reader(filename=fpath, encoding=enc)
-    samples_gq = {s: [] for s in reader.samples}
-    num_samples = len(reader.samples)
-    # TODO - doplnit aby bodku v no-calloch skiplo a znizilo pocet varaintov
-    for record in reader:
-        quals = get_quals(record)
-        for i, id in zip(range(num_samples), reader.samples):
-            samples_gq[id].append(quals[i])
-
-    return samples_gq
-
-
-def sample_text_record(data, id):
-    """
-
-    :param id:
-    :return:
-    """
-    no_variants = len(data)
-    mean = statistics.mean(data)
-    stdev = statistics.stdev(data)
-    median = statistics.median(data)
-
-    print("################################################")
-    print("\t### Sample: {}".format(str(id)))
-    print("\t### Num of variants: {}".format(str(no_variants)))
-    print("\t###### Genotype Quality (GQ)")
-    print("\t#########   Mean: {}".format(mean))
-    print("\t######### StdDev: {}".format(stdev))
-    print("\t######### Median: {}".format(median))
-    print("")
-
-
-def samples_text_records(samples_quals):
-    """
-
-    :param samples_quals:
-    :return:
-    """
-    for sample in samples_quals.keys():
-        sample_text_record(samples_quals[sample], sample)
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     args = parse_args()
-    samples_quals = parse_vcf_quals(args.input)
-    samples_text_records(samples_quals)
