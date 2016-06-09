@@ -19,26 +19,25 @@ def parse_args():
 
 
 class Statter(object):
-    def __init__(self, in_file, pdf_path):
+    def __init__(self, in_file, pdf_path, tags='GT,GQ,DP'):
         assert os.path.exists(in_file), "File {} does not exist!".format(in_file)
         self._in_file = in_file
         self._pdf_path = pdf_path
+        self._tags = [x.strip() for x in tags.split(',')]
         self._reader = Reader(filename=self._in_file)
         self._vs = get_instance(self._reader)
-        self._data = self._vs.run()
 
     def run(self):
         # TODO - continue here!
-        raise NotImplemented
+        data = self._vs.run(self._tags)
+        create_boxplot()
+        print("Success!\n\n")
+        [print("\tTag {}: {}".format(tag, len(data[tag]))) for tag in data.keys()]
 
 
-# fpath = 'test/files/XYZ123.vcf'
-# ordfp = 'figs/GTs.png'
-# cdist = 'figs/GQcdf.png'
-# ddist = 'figs/DPcdf.png'
-# nomfp = 'figs/GQs.png'
-# orddp = 'figs/DPs.png'
-# large = 'input/E6.vcf'
+invcf = '/home/daniel/ielis/vcfkit/input/E6.vcf'
+out_path = '/home/daniel/ielis/vcfkit/output/test'
+
 # tags = ['GT', 'DP', 'GQ']
 #
 # r = Reader(filename=large)
@@ -65,3 +64,5 @@ class Statter(object):
 
 if __name__ == '__main__':
     args = parse_args()
+    st = Statter(args.in_vcf, args.pdf_path, args.tags)
+    st.run()

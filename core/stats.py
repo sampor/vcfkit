@@ -25,6 +25,11 @@ class VcfStats(object):
         self.nominal, self.ordinal = self._parse_header()
 
     def run(self, interest):
+        """Analyze VCF records and return values in a dictionary
+
+        :param interest: list of VCF tags.
+        :return: dict with values by tag
+        """
         assert isinstance(interest, list), "Fields must be passed in a list!"
         # check tag presence in VCF
         self._check_tags(interest)

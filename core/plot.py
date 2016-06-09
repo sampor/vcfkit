@@ -19,6 +19,7 @@ def create_boxplot(fpath, ordinal_data, labels, title='Default boxplot title'):
     ax.set_xticklabels(labels)
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
+    ax.text()
     fig.savefig(fpath, bbox_inches='tight')
 
 

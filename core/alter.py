@@ -40,6 +40,7 @@ class Alternator(object):
     def create_call_data(self, samp_fmt):
         """Create CallData object to hold values of samples' FORMAT field
 
+        :param samp_fmt: FORMAT string
         :return:
         """
         if samp_fmt not in self.rhandle._format_cache:
