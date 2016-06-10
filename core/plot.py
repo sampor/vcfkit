@@ -7,19 +7,21 @@ import numpy as np
 numgen = (x for x in range(30))
 
 
-def create_boxplot(fpath, ordinal_data, labels, title='Default boxplot title'):
+def create_boxplot(fpath, ordinal_data, labels, title='Default boxplot title', xlabel='Default X label',
+                   ylabel="Default Y label"):
     """Create boxplot from ordinal data"""
     if _typecheck(ordinal_data, list):
         pass
     fig = plt.figure(next(numgen), figsize=(6, 15))
     ax = fig.add_subplot(111)
-    plt.grid(True)
     ax.set_title(title)
     bp = ax.boxplot(ordinal_data, patch_artist=True)
     ax.set_xticklabels(labels)
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
-    ax.text()
+    plt.grid(True)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
     fig.savefig(fpath, bbox_inches='tight')
 
 
@@ -42,16 +44,19 @@ def create_piechart(fpath, nominal_data, title='Default piechart title'):
     fig.savefig(fpath, bbox_inches='tight')
 
 
-def create_cumulative_distribution(fpath, ordinal_data, title='Default cumulative histogram title'):
+def create_cumulative_distribution(fpath, ordinal_data, title='Default cumulative histogram title',
+                                   xlabel="Default X label", ylabel="Default Y label"):
     n_bins = 50
     n_ordinal_data = len(ordinal_data)
     values, base = np.histogram(ordinal_data, bins=n_bins)
     cumulative = np.cumsum(values)
     fig = plt.figure(next(numgen), figsize=(9, 6))
-    plt.grid(True)
     ax = fig.add_subplot(111)
     ax.set_title(title)
     ax.plot(base[:-1], cumulative, c='blue')
+    plt.grid(True)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
     fig.savefig(fpath, bbox_inches='tight')
 
 

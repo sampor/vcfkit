@@ -1,4 +1,9 @@
+import os
+
+from vcf import Reader
 from . import util
+from . import plot
+
 cache = {}
 loc_cache = {}
 
@@ -6,7 +11,7 @@ VCF_FIELD_TYPES = {'FILTER': 'filters', 'FORMAT': 'formats', 'INFO': 'infos'}
 INV_VCF_FIELD_TYPES = {v: k for k, v in VCF_FIELD_TYPES.items()}
 
 
-def get_instance(r_handle):
+def get_instance_of_vcf_stats(r_handle):
     if r_handle in cache:
         return cache[r_handle]
     else:
@@ -38,6 +43,14 @@ class VcfStats(object):
             values = self._get_values(interest, record)
             [data[k].append(v) for k, v in values.items()]
         return data
+
+    def choose_plot(self, tag):
+        if tag in self.nominal:
+            return [plot.create_piechart]
+        elif tag in self.ordinal:
+            return [plot.create_boxplot, plot.create_cumulative_distribution]
+        else:
+            raise StatsException("Cannot decide which plot to use for tag {}!".format(tag))
 
     def _parse_header(self):
         """Classify fields from FILTER, INFO and FORMAT columns as nominal or ordinal.
@@ -130,10 +143,33 @@ class VcfStats(object):
 
             raise StatsException("This shouldn't happen!")
 
-    def _check_tags(self, interest):
-        for tag in interest:
-            if tag not in self.nominal + self.ordinal:
-                raise StatsException("Tag {} is not present in VCF header!".format(tag))
+    def check_tags(self, tag_list):
+        return [self._check_tag(t) for t in tag_list]
+
+    def _check_tag(self, tag):
+        if tag not in self.nominal + self.ordinal:
+            return False
+        return True
+
+
+class VcfStatsRunner(object):
+    def __init__(self, in_file, pdf_path):
+        assert os.path.exists(in_file), "File {} does not exist!".format(in_file)
+        self._in_file = in_file
+        self._pdf_path = pdf_path
+
+    def run(self, tags):
+        tg = self._parse_tags(tags)
+        rd = Reader(filename=self._in_file)
+        vs = get_instance_of_vcf_stats(rd)
+        data = vs.run(tg)
+        print("Successfully run everything up to now!"
+              "Data len: {}".format(len(data)))
+
+    def _parse_tags(self, tag_string):
+        if ',' in tag_string and ':' in tag_string:
+            raise StatsException("Tags cannot be separated both with comma & colon!")
+
 
 
 class StatsException(Exception):

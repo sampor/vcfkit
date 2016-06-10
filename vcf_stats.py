@@ -1,15 +1,14 @@
+#!/./vcfkit_venv/bin/python
 import argparse
-import os
 import sys
-from core.plot import create_boxplot, create_piechart, create_cumulative_distribution
-from core.stats import get_instance
-from vcf import Reader
+
+from runners.vcf_stats import VCFStatsRunner
 
 
 def parse_args():
     VERSION = 'develop'
     parser = argparse.ArgumentParser(description="Generate PDF with useful statistics from VCF file",
-                                     prog="vcf-stats.py")
+                                     prog="vcf_stats.py")
     parser.add_argument("in_vcf", help="Input VCF file", default=sys.stdin)
     parser.add_argument("pdf_path", help="Write PDF report to this path")
     parser.add_argument("-t", "--tags", help="VCF Format, Filter or Info tags to be analyzed",
@@ -18,26 +17,15 @@ def parse_args():
     return parser.parse_args()
 
 
-class Statter(object):
-    def __init__(self, in_file, pdf_path, tags='GT,GQ,DP'):
-        assert os.path.exists(in_file), "File {} does not exist!".format(in_file)
-        self._in_file = in_file
-        self._pdf_path = pdf_path
-        self._tags = [x.strip() for x in tags.split(',')]
-        self._reader = Reader(filename=self._in_file)
-        self._vs = get_instance(self._reader)
-
-    def run(self):
-        # TODO - continue here!
-        data = self._vs.run(self._tags)
-        create_boxplot()
-        print("Success!\n\n")
-        [print("\tTag {}: {}".format(tag, len(data[tag]))) for tag in data.keys()]
 
 
-invcf = '/home/daniel/ielis/vcfkit/input/E6.vcf'
-out_path = '/home/daniel/ielis/vcfkit/output/test'
-
+# fpath = 'test/files/XYZ123.vcf'
+# ordfp = 'figs/GTs.png'
+# cdist = 'figs/GQcdf.png'
+# ddist = 'figs/DPcdf.png'
+# nomfp = 'figs/GQs.png'
+# orddp = 'figs/DPs.png'
+# large = 'input/E6.vcf'
 # tags = ['GT', 'DP', 'GQ']
 #
 # r = Reader(filename=large)
@@ -64,5 +52,5 @@ out_path = '/home/daniel/ielis/vcfkit/output/test'
 
 if __name__ == '__main__':
     args = parse_args()
-    st = Statter(args.in_vcf, args.pdf_path, args.tags)
-    st.run()
+    st = VCFStatsRunner(in_file=args.in_vcf, pdf_path=args.pdf_path)
+    st.run(args.tags)
