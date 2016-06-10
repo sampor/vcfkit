@@ -114,12 +114,13 @@ class Alternator(object):
 
         return samp_data
 
-    def add_header_line(self, meta_type, id=None, number=None, type=None, description=None):
+    def add_header_line(self, meta_type, meta_id=None, number=None, data_type=None, description=None):
         """
 
-        :param id:
+        :param meta_type:
+        :param meta_id:
         :param number:
-        :param type:
+        :param data_type:
         :param description:
         :return:
         """

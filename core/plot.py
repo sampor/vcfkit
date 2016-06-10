@@ -7,8 +7,8 @@ import numpy as np
 numgen = (x for x in range(30))
 
 
-def create_boxplot(fpath, ordinal_data, labels, title='Default boxplot title', xlabel='Default X label',
-                   ylabel="Default Y label"):
+def get_boxplot(ordinal_data, title='Default boxplot title', xlabel='Default X label',
+                ylabel="Default Y label"):
     """Create boxplot from ordinal data"""
     if _typecheck(ordinal_data, list):
         pass
@@ -16,16 +16,16 @@ def create_boxplot(fpath, ordinal_data, labels, title='Default boxplot title', x
     ax = fig.add_subplot(111)
     ax.set_title(title)
     bp = ax.boxplot(ordinal_data, patch_artist=True)
-    ax.set_xticklabels(labels)
+    # ax.set_xticklabels(labels)
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
     plt.grid(True)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    fig.savefig(fpath, bbox_inches='tight')
+    return fig
 
 
-def create_piechart(fpath, nominal_data, title='Default piechart title'):
+def get_piechart(nominal_data, title='Default piechart title'):
     """Create piechart from nominal data"""
     if _typecheck(nominal_data, list):
         pass
@@ -41,13 +41,13 @@ def create_piechart(fpath, nominal_data, title='Default piechart title'):
     ax = fig.add_subplot(111)
     ax.set_title(title)
     p = ax.pie(vals, labels=labs, shadow=True)
-    fig.savefig(fpath, bbox_inches='tight')
+    return fig
 
 
-def create_cumulative_distribution(fpath, ordinal_data, title='Default cumulative histogram title',
-                                   xlabel="Default X label", ylabel="Default Y label"):
+def get_cumulative_distribution(ordinal_data, title='Default cumulative histogram title',
+                                xlabel="Default X label", ylabel="Default Y label"):
     n_bins = 50
-    n_ordinal_data = len(ordinal_data)
+    # n_ordinal_data = len(ordinal_data)
     values, base = np.histogram(ordinal_data, bins=n_bins)
     cumulative = np.cumsum(values)
     fig = plt.figure(next(numgen), figsize=(9, 6))
@@ -57,7 +57,7 @@ def create_cumulative_distribution(fpath, ordinal_data, title='Default cumulativ
     plt.grid(True)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    fig.savefig(fpath, bbox_inches='tight')
+    return fig
 
 
 def _typecheck(data, data_type):
