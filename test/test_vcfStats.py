@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from core.stats import get_instance_of_vcf_stats, StatsException, VcfStatsRunner
+from core.stats import VcfStats, StatsException, VcfStatsRunner, parse_tags
 from vcf import Reader
 
 fpath = 'files/XYZ123.vcf'
@@ -10,7 +10,7 @@ fpath = 'files/XYZ123.vcf'
 class TestVcfStats(unittest.TestCase):
     def setUp(self):
         self.reader = Reader(filename=fpath)
-        self.vs = get_instance_of_vcf_stats(self.reader)
+        self.vs = VcfStats(vcf_path=fpath)
         self.cg_record = next(self.reader)
         for x in range(3):
             # Throw away uninteresting VCF records
@@ -31,7 +31,7 @@ class TestVcfStats(unittest.TestCase):
     def test_run(self):
         interesting_fields = ['GT', 'DP', 'GQ', 'Dels']
         bad_input = 'GT:DP:GQ'
-        self.assertRaises(AssertionError, self.vs.run, bad_input)
+        self.assertRaises(AssertionError, self.vs.get_data_for_tags, bad_input)
 
     def test__localise_good_input(self):
         gt_sites = self.vs._localise('GT')
@@ -70,10 +70,7 @@ class TestVcfStatsRunner(unittest.TestCase):
     """
 
     def setUp(self):
-        """
-
-        :return:
-        """
+        """"""
         self.infile = fpath
         self.out_path = 'files/StatsRunner.pdf'
         if os.path.exists(self.out_path):
@@ -84,21 +81,37 @@ class TestVcfStatsRunner(unittest.TestCase):
         bad_in_path = 'files/EvilUnrealName.vcf'
         self.failUnlessRaises(AssertionError, VcfStatsRunner, bad_in_path, self.out_path)
 
-    def test__parse_tags__separators(self):
-        """Test good, faked good and bad input, values separated by ':' & ','"""
-        good_tags_colon = 'GT:DP:GQ'
+    def test_parse_tags__colon_separator(self):
+        """Test good input, values separated by ':'"""
+        tags_colon = 'GT:DP:GQ'
+        res = ['GT', 'DP', 'GQ']
+        self.assertListEqual(res, parse_tags(tags_colon), "Error parsing ':'separated values!")
+
+    def test_parse_tags__comma_separator(self):
+        """Test good input, values separated by ','"""
+        tags_comma = 'GT,DP, GQ'
+        res = ['GT', 'DP', 'GQ']
+        self.assertListEqual(res, parse_tags(tags_comma), "Error parsing ','separated values!")
+
+    def test_parse_tags__fake_input(self):
+        """Test more input values"""
+        other_tags_colon = 'DP:GT'
+        other_res = ['DP', 'GT']
+        self.assertListEqual(other_res, parse_tags(other_tags_colon), "Error parsing ':'separated values!")
         good_tags_comma = 'GT,DP, GQ'
         res = ['GT', 'DP', 'GQ']
-        other_tags_colon = 'GT:DP'
-        other_res = ['DP', 'GT']
-        self.assertListEqual(res, self.vsr._parse_tags(good_tags_colon), "Error parsing ':'separated values!")
-        self.assertListEqual(res, self.vsr._parse_tags(good_tags_comma), "Error parsing ','separated values!")
-        self.assertListEqual(other_res, self.vsr._parse_tags(other_tags_colon), "Error parsing ':'separated values!")
+        self.assertListEqual(res, parse_tags(good_tags_comma))
 
-    def test__parse_tags_exceptions(self):
+    def test_parse_tags__single_tag(self):
+        """Test single tag parsing"""
+        tag = 'GT'
+        res = ['GT']
+        self.assertListEqual(res, parse_tags(tag), "Error parsing single value tag string!")
+
+    def test_parse_tags_exceptions(self):
         """"""
         bad_sep = 'GT:DP,GQ'
-        self.assertRaises(StatsException, self.vsr._parse_tags, bad_sep)
+        self.assertRaises(StatsException, parse_tags, bad_sep)
 
 if __name__ == '__main__':
     unittest.main()

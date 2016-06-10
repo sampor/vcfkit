@@ -3,6 +3,7 @@ import os
 from vcf import Reader
 from . import util
 from . import plot
+from .writers import PdfPlotWriter
 
 cache = {}
 loc_cache = {}
@@ -11,33 +12,20 @@ VCF_FIELD_TYPES = {'FILTER': 'filters', 'FORMAT': 'formats', 'INFO': 'infos'}
 INV_VCF_FIELD_TYPES = {v: k for k, v in VCF_FIELD_TYPES.items()}
 
 
-def get_instance_of_vcf_stats(r_handle):
-    if r_handle in cache:
-        return cache[r_handle]
-    else:
-        cache[r_handle] = VcfStats(r_handle)
-        return cache[r_handle]
-
-
 class VcfStats(object):
     """
 
     """
 
-    def __init__(self, reader_handle):
+    def __init__(self, vcf_path):
         # open VCF & parse header lines
-        self.r_handle = reader_handle
+        self.r_handle = Reader(filename=vcf_path)
         self.nominal, self.ordinal = self._parse_header()
 
-    def run(self, interest):
-        """Analyze VCF records and return values in a dictionary
-
-        :param interest: list of VCF tags.
-        :return: dict with values by tag
-        """
+    def get_data_for_tags(self, interest):
         assert isinstance(interest, list), "Fields must be passed in a list!"
         # check tag presence in VCF
-        self._check_tags(interest)
+        self.check_tags(interest)
         data = {key: list() for key in interest}
         for record in self.r_handle:
             values = self._get_values(interest, record)
@@ -46,9 +34,9 @@ class VcfStats(object):
 
     def choose_plot(self, tag):
         if tag in self.nominal:
-            return [plot.create_piechart]
+            return [plot.get_piechart]
         elif tag in self.ordinal:
-            return [plot.create_boxplot, plot.create_cumulative_distribution]
+            return [plot.get_boxplot, plot.get_cumulative_distribution]
         else:
             raise StatsException("Cannot decide which plot to use for tag {}!".format(tag))
 
@@ -144,7 +132,12 @@ class VcfStats(object):
             raise StatsException("This shouldn't happen!")
 
     def check_tags(self, tag_list):
-        return [self._check_tag(t) for t in tag_list]
+        """Check tag presence in VCF file. Raise StatsException if a tag is not present in VCF."""
+        # TODO - we may continue even if one tag is not present. Just leave it and process the others
+        for t in tag_list:
+            if not self._check_tag(t):
+                raise StatsException("Tag {} is not present in VCF file!".format(t))
+        return True
 
     def _check_tag(self, tag):
         if tag not in self.nominal + self.ordinal:
@@ -158,18 +151,35 @@ class VcfStatsRunner(object):
         self._in_file = in_file
         self._pdf_path = pdf_path
 
-    def run(self, tags):
-        tg = self._parse_tags(tags)
-        rd = Reader(filename=self._in_file)
-        vs = get_instance_of_vcf_stats(rd)
-        data = vs.run(tg)
-        print("Successfully run everything up to now!"
-              "Data len: {}".format(len(data)))
+    def analyze_tags(self, tags):
+        tg = parse_tags(tags)
+        vs = VcfStats(self._in_file)
+        data = vs.get_data_for_tags(tg)
+        pdf_writer = PdfPlotWriter(self._pdf_path)
+        for t in tg:
+            # TODO - Create class for choosing plot type - based on VCF Header and tag
+            cp = vs.choose_plot(t)
+            # cp may be more methods
+            figs = [p(data[t]) for p in cp]
+            [pdf_writer.add_plot(fig) for fig in figs]
 
-    def _parse_tags(self, tag_string):
-        if ',' in tag_string and ':' in tag_string:
-            raise StatsException("Tags cannot be separated both with comma & colon!")
+        pdf_writer.write_out()
 
+    def get_data(self, tags):
+        pass
+
+
+def parse_tags(tag_string):
+    separators = [',', ':']
+    if ',' in tag_string and ':' in tag_string:
+        raise StatsException("Tags cannot be separated both with comma & colon!")
+
+    for sep in separators:
+        if sep in tag_string:
+            ts = tag_string.split(sep)
+            return [t.strip() for t in ts]
+    # separator is not present, probably single tag input string (e.g. 'GT')
+    return [tag_string]
 
 
 class StatsException(Exception):
