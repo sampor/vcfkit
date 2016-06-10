@@ -1,8 +1,8 @@
-#!/./vcfkit_venv/bin/python
+#!./vcfkit_venv/bin/python
 import argparse
 import sys
 
-from runners.vcf_stats import VCFStatsRunner
+from core.stats import VcfStatsRunner
 
 
 def parse_args():
@@ -52,5 +52,5 @@ def parse_args():
 
 if __name__ == '__main__':
     args = parse_args()
-    st = VCFStatsRunner(in_file=args.in_vcf, pdf_path=args.pdf_path)
-    st.run(args.tags)
+    ckor = VcfStatsRunner(in_file=args.in_vcf, pdf_path=args.pdf_path)
+    ckor.analyze_tags(args.tags)
