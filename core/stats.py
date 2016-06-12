@@ -1,12 +1,10 @@
 import os
 
+import yaml
 from vcf import Reader
-from . import util
 from . import plot
+from . import util
 from .writers import PdfPlotWriter
-
-cache = {}
-loc_cache = {}
 
 VCF_FIELD_TYPES = {'FILTER': 'filters', 'FORMAT': 'formats', 'INFO': 'infos'}
 INV_VCF_FIELD_TYPES = {v: k for k, v in VCF_FIELD_TYPES.items()}
@@ -16,11 +14,15 @@ class VcfStats(object):
     """
 
     """
+    loc_cache = {}
 
-    def __init__(self, vcf_path):
+    def __init__(self, vcf_path, plot_conf_file='config/plot_config.yaml'):
         # open VCF & parse header lines
+        self._plot_conf_file_path = plot_conf_file
+        self.plot_conf = parse_plot_conf_file(self._plot_conf_file_path)
         self.r_handle = Reader(filename=vcf_path)
         self.nominal, self.ordinal = self._parse_header()
+        self.samples = self.r_handle.samples
 
     def get_data_for_tags(self, interest):
         assert isinstance(interest, list), "Fields must be passed in a list!"
@@ -32,13 +34,26 @@ class VcfStats(object):
             [data[k].append(v) for k, v in values.items()]
         return data
 
-    def choose_plot(self, tag):
-        if tag in self.nominal:
-            return [plot.get_piechart]
-        elif tag in self.ordinal:
-            return [plot.get_boxplot, plot.get_cumulative_distribution]
-        else:
-            raise StatsException("Cannot decide which plot to use for tag {}!".format(tag))
+    def get_plot_for_data(self, tag, data):
+        try:
+            tag_metainfo = self.plot_conf[tag]
+        except KeyError:
+            raise StatsException(
+                "Plot type for tag {} is not specified in config file '{}'!".format(tag, self._plot_conf_file_path))
+        try:
+            tag_data = data[tag]
+        except KeyError:
+            raise StatsException("Provided data doesn't contain data related to requested tag {}!".format(tag))
+
+        p_types = tag_metainfo['plottypes']
+        figs = []
+        for p_type in p_types:
+            p_method = plot.get_plot_callable(p_type)
+            p_kwargs = self.plot_conf[tag][p_type]
+            fig = p_method(data[tag], **p_kwargs)
+            figs.append(fig)
+
+        return figs
 
     def _parse_header(self):
         """Classify fields from FILTER, INFO and FORMAT columns as nominal or ordinal.
@@ -119,15 +134,15 @@ class VcfStats(object):
         :return: Reader attribute string. E.g. 'infos'
         """
 
-        if tag in loc_cache:
-            return loc_cache[tag]
+        if tag in VcfStats.loc_cache:
+            return VcfStats.loc_cache[tag]
         else:
             priority = ['formats', 'infos', 'filters']
             for site in priority:
                 od = getattr(self.r_handle, site)
                 if tag in od.keys():
-                    loc_cache[tag] = site
-                    return loc_cache[tag]
+                    VcfStats.loc_cache[tag] = site
+                    return VcfStats.loc_cache[tag]
 
             raise StatsException("This shouldn't happen!")
 
@@ -158,9 +173,9 @@ class VcfStatsRunner(object):
         pdf_writer = PdfPlotWriter(self._pdf_path)
         for t in tg:
             # TODO - Create class for choosing plot type - based on VCF Header and tag
-            cp = vs.choose_plot(t)
+            figs = vs.get_plot_for_data(t, data)
             # cp may be more methods
-            figs = [p(data[t]) for p in cp]
+
             [pdf_writer.add_plot(fig) for fig in figs]
 
         pdf_writer.write_out()
@@ -180,6 +195,11 @@ def parse_tags(tag_string):
             return [t.strip() for t in ts]
     # separator is not present, probably single tag input string (e.g. 'GT')
     return [tag_string]
+
+
+def parse_plot_conf_file(fpath):
+    with open(fpath) as fh:
+        return yaml.load(fh)
 
 
 class StatsException(Exception):

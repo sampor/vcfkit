@@ -1,16 +1,17 @@
 import os
 import unittest
 
-from core.stats import VcfStats, StatsException, VcfStatsRunner, parse_tags
+from core.stats import VcfStats, StatsException, VcfStatsRunner, parse_tags, parse_plot_conf_file
 from vcf import Reader
 
-fpath = 'files/XYZ123.vcf'
+vcf_fpath = 'core_tests/files/XYZ123.vcf'
+yaml_fpath = 'core_tests/files/plot_config.yaml'
 
 
 class TestVcfStats(unittest.TestCase):
     def setUp(self):
-        self.reader = Reader(filename=fpath)
-        self.vs = VcfStats(vcf_path=fpath)
+        self.reader = Reader(filename=vcf_fpath)
+        self.vs = VcfStats(vcf_path=vcf_fpath)
         self.cg_record = next(self.reader)
         for x in range(3):
             # Throw away uninteresting VCF records
@@ -71,7 +72,7 @@ class TestVcfStatsRunner(unittest.TestCase):
 
     def setUp(self):
         """"""
-        self.infile = fpath
+        self.infile = vcf_fpath
         self.out_path = 'files/StatsRunner.pdf'
         if os.path.exists(self.out_path):
             os.remove(self.out_path)
@@ -112,6 +113,18 @@ class TestVcfStatsRunner(unittest.TestCase):
         """"""
         bad_sep = 'GT:DP,GQ'
         self.assertRaises(StatsException, parse_tags, bad_sep)
+
+
+class TestPlotChief(unittest.TestCase):
+    def test_parse_plot_conf_file(self):
+        exp = {'DP':
+                   {'cumulative_distribution': {'ylabel': 'Y-label CDF'},
+                    'plottypes': ['boxplot', 'cumulative_distribution'],
+                    'boxplot': {'xlabel': 'Sample'}}}
+        res = parse_plot_conf_file(yaml_fpath)
+        self.assertDictEqual(exp, res)
+
+        # def test_
 
 if __name__ == '__main__':
     unittest.main()

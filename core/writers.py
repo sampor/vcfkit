@@ -1,7 +1,5 @@
 import datetime
-import numpy as np
 from matplotlib.backends.backend_pdf import PdfPages
-import matplotlib.pyplot as plt
 
 
 class PdfPlotWriter(object):
@@ -26,4 +24,8 @@ class PdfPlotWriter(object):
 
         with PdfPages(self._out) as pdf:
             for fig in self._plots:
-                pdf.savefig(fig)
+                pdf.savefig(fig, orientation='portrait')
+                d = pdf.infodict()
+                d['Title'] = 'Vcfkit report for sample {}'.format('E6')
+                d['Author'] = 'Daniel Danis'
+                d['CreationDate'] = datetime.datetime.utcnow()

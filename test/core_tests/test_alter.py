@@ -1,6 +1,6 @@
 import unittest
 
-from core import alter
+import core.alter as alter
 
 try:
     from vcf.parser import Reader
@@ -11,7 +11,7 @@ except ImportError:
 
 class TestAlternator(unittest.TestCase):
     def setUp(self):
-        self.alternator = alter.Alternator(Reader(filename='files/XYZ123.vcf'))
+        self.alternator = alter.Alternator(Reader(filename='core_tests/files/XYZ123.vcf'))
         self.one_hom = next(self.alternator.rhandle)
         self.x_het = next(self.alternator.rhandle)
         self.x_monoploid = next(self.alternator.rhandle)

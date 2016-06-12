@@ -7,31 +7,32 @@ import numpy as np
 numgen = (x for x in range(30))
 
 
-def get_boxplot(ordinal_data, title='Default boxplot title', xlabel='Default X label',
-                ylabel="Default Y label"):
+def get_boxplot(data, title='Default boxplot title', xlabel='Default X label',
+                ylabel="Default Y label", yscale='linear', **kwargs):
     """Create boxplot from ordinal data"""
-    if _typecheck(ordinal_data, list):
+    if _typecheck(data, list):
         pass
     fig = plt.figure(next(numgen), figsize=(6, 15))
     ax = fig.add_subplot(111)
     ax.set_title(title)
-    bp = ax.boxplot(ordinal_data, patch_artist=True)
+    bp = ax.boxplot(data, patch_artist=True)
     # ax.set_xticklabels(labels)
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
-    plt.grid(True)
+    ax.set_yscale(yscale, nonposy='clip')
+    plt.grid(True, axis='both', which='minor')
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     return fig
 
 
-def get_piechart(nominal_data, title='Default piechart title'):
+def get_piechart(data, title='Default piechart title', **kwargs):
     """Create piechart from nominal data"""
-    if _typecheck(nominal_data, list):
+    if _typecheck(data, list):
         pass
-    total = len(nominal_data)
+    total = len(data)
     nums = defaultdict(int)
-    for v in nominal_data:
+    for v in data:
         nums[v] += 1
 
     fract = {k: float(v / total) for k, v in nums.items()}
@@ -44,17 +45,20 @@ def get_piechart(nominal_data, title='Default piechart title'):
     return fig
 
 
-def get_cumulative_distribution(ordinal_data, title='Default cumulative histogram title',
-                                xlabel="Default X label", ylabel="Default Y label"):
+def get_cumulative_distribution(data, title='Default cumulative histogram title',
+                                xlabel="Default X label", ylabel="Default Y label",
+                                xscale='linear', yscale='linear', **kwargs):
     n_bins = 50
     # n_ordinal_data = len(ordinal_data)
-    values, base = np.histogram(ordinal_data, bins=n_bins)
+    values, base = np.histogram(data, bins=n_bins)
     cumulative = np.cumsum(values)
     fig = plt.figure(next(numgen), figsize=(9, 6))
     ax = fig.add_subplot(111)
     ax.set_title(title)
+    ax.set_xscale(xscale, nonposx='clip')
+    ax.set_yscale(yscale, nonposy='clip')
     ax.plot(base[:-1], cumulative, c='blue')
-    plt.grid(True)
+    plt.grid(True, axis='both', which='minor')
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     return fig
@@ -65,3 +69,16 @@ def _typecheck(data, data_type):
     if isinstance(data, data_type):
         return True
     raise TypeError("Please provide data in a {}!".format(data_type))
+
+
+plot_2_method = {'boxplot': get_boxplot,
+                 'piechart': get_piechart,
+                 'cumulative_distribution': get_cumulative_distribution}
+
+
+def get_plot_callable(plottype):
+    """Factory method for choosing the plot method"""
+    try:
+        return plot_2_method[plottype]
+    except ValueError:
+        raise Exception("Cannot pair plot type {} with plotting method!".format(plottype))

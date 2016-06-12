@@ -1,0 +1,8 @@
+DP:
+  plottypes:
+    - boxplot
+    - cumulative_distribution
+  boxplot:
+    xlabel: Sample
+  cumulative_distribution:
+    ylabel: Y-label CDF

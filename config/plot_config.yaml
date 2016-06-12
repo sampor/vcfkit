@@ -1,0 +1,33 @@
+# This configuration file contains info related to data plotting
+# TAG
+#   scale types - linear, log, symlog, logit
+DP:
+  plottypes: [boxplot, cumulative_distribution]
+  boxplot:
+    title: Read depth (DP)
+    xlabel: Sample
+    ylabel: Read depth
+    yscale: log
+  cumulative_distribution:
+    title: Cumulative distribution of Read depth (DP)
+    xlabel: Read depth
+    ylabel: Number of reads having DP less than
+    xscale: log
+    yscale: linear
+GQ:
+  plottypes: [boxplot, cumulative_distribution]
+  boxplot:
+    title: Genotype quality
+    xlabel: Sample
+    ylabel: Genotype quality
+    yscale: log
+  cumulative_distribution:
+    title: Cumulative distribution of Genotype quality (GQ)
+    xlabel: Genotype quality
+    xscale: log
+    ylabel: Number of reads having GQ less than
+    yscale: linear
+GT:
+  plottypes: [piechart]
+  piechart:
+    title: Genotype distribution
