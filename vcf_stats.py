@@ -1,4 +1,4 @@
-#!./vcfkit_venv/bin/python
+#!/home/daniel/ielis/vcfkit/vcfkit_venv/bin/python
 import argparse
 import sys
 
