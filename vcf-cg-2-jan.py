@@ -1,4 +1,4 @@
-#!./vcfkit_venv/bin/python
+#!/home/daniel/ielis/vcfkit/vcfkit_venv/bin/python
 #  -*- coding: utf-8 -*-
 """
 Created on Thu Nov 19 18:21:47 2015
@@ -25,10 +25,11 @@ out_vcf = '/home/daniel/ielis/vcfkit/output/FH327.snp.vcf'
 
 def parse_args():
     VERSION = 'develop'
-    parser = argparse.ArgumentParser(description="Downsample Complete Genomics VCF to Jannovar.",
+    parser = argparse.ArgumentParser(description="Downsample Complete Genomics VCF to Jannovar-suitable format.",
                                      prog="vcf-cg-2-jan.py")
     parser.add_argument("in_vcf", help="Input VCF file", default=sys.stdin)
     parser.add_argument("out_vcf", help="Write output to this path", default=sys.stdout)
+    parser.add_argument("-t", "--type", help="Choose analysis type: ( GT | GL )", default='GT')
     parser.add_argument("-v", "--version", action='version', version='%(prog)s ' + VERSION)
     return parser.parse_args()
 
@@ -38,22 +39,22 @@ class CompleteGenomics2Jannovar(object):
 
     """
 
-    def __init__(self, in_path, out_path):
+    def __init__(self, in_path, out_path, fmt_f):
         """
 
         """
-
+        self.fmt_fields = fmt_f
         self.reader = vcf.Reader(filename=in_path, encoding=enc)
-        self._update_header()
+        self._update_header(self.fmt_fields)
         self.new_format_fields = list(self.reader.formats.keys())
         self.writer = vcf.Writer(stream=open(out_path, mode='w', encoding=enc), template=self.reader)
 
-    def _update_header(self):
+    def _update_header(self, fmt_f):
         """
 
         """
         for k in self.reader.formats.keys():
-            if not k == 'GT':
+            if k not in fmt_f:
                 del (self.reader.formats[k])
 
     def run(self):
@@ -98,5 +99,11 @@ class CompleteGenomics2Jannovar(object):
 
 if __name__ == '__main__':
     args = parse_args()
-    cg2j = CompleteGenomics2Jannovar(args.in_vcf, args.out_vcf)
+    if args.type == 'GT':
+        fmt_fields = ['GT']
+    elif args.type == 'GL':
+        fmt_fields = ['GT', 'DP', 'AD', 'FT', 'PL', 'GQ', 'PS']
+    else:
+        raise Exception("Cannot run analysis without requested tags!")
+    cg2j = CompleteGenomics2Jannovar(args.in_vcf, args.out_vcf, fmt_fields)
     cg2j.run()
