@@ -1,7 +1,15 @@
 import os
 
-import yaml
-from vcf import Reader
+try:
+    import yaml
+except ImportError:
+    print("PyYAML module is not installed. Try 'pip3 install PyYAML'")
+    raise
+
+try:
+    from vcf import Reader
+except ImportError:
+    print("PyVCF module is not installed. Try 'pip3 install PyVCF'")
 from . import plot
 from . import util
 from .writers import PdfPlotWriter
@@ -81,10 +89,6 @@ class VcfStats(object):
                         nominal.append(tag_id)
                     elif t == 'Flag':
                         nominal.append(tag_id)
-                    else:
-                        raise StatsException(
-                            "Problem parsing tag {} from {} field! "
-                            "The type is neither Integer nor String!".format(tag_id, k))
                 except AttributeError:
                     util.eprint("Tag {} is neither ordinal or nominal. Skipping..".format(tag_id))
 
@@ -93,38 +97,8 @@ class VcfStats(object):
     def _get_values(self, tags, record):
         """Return dictionary with tags and their values"""
         loc = [self._localise(x) for x in tags]
-        res = {t: self._get_value(t, l, record) for t, l in zip(tags, loc)}
+        res = {t: get_tag_value(t, l, record) for t, l in zip(tags, loc)}
         return res
-
-    def _get_value(self, tag, loc, record, missing=None):
-        """Return tag value from _Record. Return missing if tag not present in _Record.
-        :param tag: Tag string to be found
-        :param loc: Place in VCF _Record (filters, formats, infos)
-        :param record: VCF _Record object
-        :param missing: Return this value if Tag is not present in _Record
-        :return: Tag value or missing
-        """
-        if loc == 'infos':
-            # Get dictionary with vcf INFO fields
-            i = getattr(record, INV_VCF_FIELD_TYPES[loc])
-            try:
-                return i[tag]
-            except KeyError:
-                return missing
-        elif loc == 'filters':
-            # TODO - implememnt me ;)
-            raise NotImplemented
-        elif loc == 'formats':
-            if len(record.samples) > 1:
-                raise StatsException("Multisample VCFs are not yet supported!")
-            # Get CallData object
-            cd = record.samples[0].data
-            try:
-                return getattr(cd, tag)
-            except AttributeError:
-                return missing
-        else:
-            raise NotImplemented
 
     def _localise(self, tag):
         """Return attribute of Reader handle where the tag is localised.
@@ -161,14 +135,15 @@ class VcfStats(object):
 
 
 class VcfStatsRunner(object):
-    def __init__(self, in_file, pdf_path):
+    def __init__(self, in_file, out_path, plot_config_file):
         assert os.path.exists(in_file), "File {} does not exist!".format(in_file)
         self._in_file = in_file
-        self._pdf_path = pdf_path
+        self._pdf_path = out_path
+        self._plot_config_file = plot_config_file
 
     def analyze_tags(self, tags):
         tg = parse_tags(tags)
-        vs = VcfStats(self._in_file)
+        vs = VcfStats(self._in_file, self._plot_config_file)
         data = vs.get_data_for_tags(tg)
         pdf_writer = PdfPlotWriter(self._pdf_path)
         for t in tg:
@@ -185,6 +160,7 @@ class VcfStatsRunner(object):
 
 
 def parse_tags(tag_string):
+    """Parse tag string into list. Tags may be separated by colon (:) and comma (,) but not both."""
     separators = [',', ':']
     if ',' in tag_string and ':' in tag_string:
         raise StatsException("Tags cannot be separated both with comma & colon!")
@@ -195,6 +171,37 @@ def parse_tags(tag_string):
             return [t.strip() for t in ts]
     # separator is not present, probably single tag input string (e.g. 'GT')
     return [tag_string]
+
+
+def get_tag_value(tag, loc, record, missing=None):
+    """Return tag value from _Record. Return missing if tag not present in _Record.
+    :param tag: Tag string to be found
+    :param loc: Place in VCF _Record (filters, formats, infos)
+    :param record: VCF _Record object
+    :param missing: Return this value if Tag is not present in _Record
+    :return: Tag value or missing
+    """
+    if loc == 'infos':
+        # Get dictionary with vcf INFO fields
+        i = getattr(record, INV_VCF_FIELD_TYPES[loc])
+        try:
+            return i[tag]
+        except KeyError:
+            return missing
+    elif loc == 'filters':
+        # TODO - implememnt me ;)
+        raise NotImplemented
+    elif loc == 'formats':
+        if len(record.samples) > 1:
+            raise StatsException("Multisample VCFs are not yet supported!")
+        # Get CallData object
+        cd = record.samples[0].data
+        try:
+            return getattr(cd, tag)
+        except AttributeError:
+            return missing
+    else:
+        raise NotImplemented
 
 
 def parse_plot_conf_file(fpath):

@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from core.stats import VcfStats, StatsException, VcfStatsRunner, parse_tags, parse_plot_conf_file
+from core.stats import VcfStats, StatsException, VcfStatsRunner, parse_tags, parse_plot_conf_file, get_tag_value
 from vcf import Reader
 
 vcf_fpath = 'core_tests/files/XYZ123.vcf'
@@ -11,7 +11,7 @@ yaml_fpath = 'core_tests/files/plot_config.yaml'
 class TestVcfStats(unittest.TestCase):
     def setUp(self):
         self.reader = Reader(filename=vcf_fpath)
-        self.vs = VcfStats(vcf_path=vcf_fpath)
+        self.vs = VcfStats(vcf_path=vcf_fpath, plot_conf_file=yaml_fpath)
         self.cg_record = next(self.reader)
         for x in range(3):
             # Throw away uninteresting VCF records
@@ -28,11 +28,18 @@ class TestVcfStats(unittest.TestCase):
         self.assertEqual(self.vs.nominal.count('GT'), 1)
         self.assertEqual(len(self.vs.ordinal), 30)
         self.assertEqual(self.vs.ordinal.count('GL'), 1)
+        # self.
 
-    def test_run(self):
-        interesting_fields = ['GT', 'DP', 'GQ', 'Dels']
+    def test_get_data_for_tags_bad_tags(self):
         bad_input = 'GT:DP:GQ'
         self.assertRaises(AssertionError, self.vs.get_data_for_tags, bad_input)
+
+    def test_get_data_for_tags_good_input(self):
+        interesting_fields = ['GT', 'DP', 'GQ']
+        data = self.vs.get_data_for_tags(interesting_fields)
+        self.assertEqual(data['GT'][1], '1/0')
+        self.assertEqual(data['DP'][2], 30)
+        self.assertEqual(data['GQ'][4], 99)
 
     def test__localise_good_input(self):
         gt_sites = self.vs._localise('GT')
@@ -45,24 +52,33 @@ class TestVcfStats(unittest.TestCase):
     def test__localise_bad_input(self):
         self.assertRaises(StatsException, self.vs._localise, 'EVIL')
 
-    @unittest.skip
     def test__get_values(self):
         interesting_fields = ['GT', 'DP', 'GQ', 'Dels']
-        final = {'GT': '1/1', 'DP': 29, 'GQ': 99, 'Dels': 0.00}
+        final = {'GT': '0/1', 'DP': 29, 'GQ': 99, 'Dels': 0.00}
         result = self.vs._get_values(interesting_fields, self.ilm_record)
         self.assertTrue(all([final[k] == result[k] for k in final.keys()]))
 
-    def test__get_value(self):
+    def test_get_tag_value(self):
         gt_formats = '0/1'
-        gt = self.vs._get_value('GT', 'formats', self.ilm_record)
+        gt = get_tag_value('GT', 'formats', self.ilm_record)
         self.assertEqual(gt, gt_formats)
 
         dels_infos = 0.00
-        dels = self.vs._get_value('Dels', 'infos', self.ilm_record)
+        dels = get_tag_value('Dels', 'infos', self.ilm_record)
         self.assertEqual(dels, dels_infos)
 
-        evil = self.vs._get_value('FOO', 'infos', self.ilm_record, missing='BAR')
+        evil = get_tag_value('FOO', 'infos', self.ilm_record, missing='BAR')
         self.assertEqual(evil, 'BAR')
+
+    def test__check_tag(self):
+        self.assertTrue(self.vs._check_tag('GT'))
+        self.assertFalse(self.vs._check_tag('BAR'))
+
+    def test_check_tags(self):
+        tag_list = ['GT', 'AD']
+        bad_input = ['GT', 'EVIL_TAG']
+        self.assertTrue(self.vs.check_tags(tag_list))
+        self.assertRaises(StatsException, self.vs.check_tags, bad_input)
 
 
 class TestVcfStatsRunner(unittest.TestCase):
@@ -74,14 +90,17 @@ class TestVcfStatsRunner(unittest.TestCase):
         """"""
         self.infile = vcf_fpath
         self.out_path = 'files/StatsRunner.pdf'
+        self.plot_config_path = yaml_fpath
         if os.path.exists(self.out_path):
             os.remove(self.out_path)
-        self.vsr = VcfStatsRunner(self.infile, self.out_path)
+        self.vsr = VcfStatsRunner(self.infile, self.out_path, self.plot_config_path)
 
     def test_vsr_init(self):
         bad_in_path = 'files/EvilUnrealName.vcf'
-        self.failUnlessRaises(AssertionError, VcfStatsRunner, bad_in_path, self.out_path)
+        self.failUnlessRaises(AssertionError, VcfStatsRunner, bad_in_path, self.out_path, self.plot_config_path)
 
+
+class TestStatsStatic(unittest.TestCase):
     def test_parse_tags__colon_separator(self):
         """Test good input, values separated by ':'"""
         tags_colon = 'GT:DP:GQ'
@@ -114,9 +133,8 @@ class TestVcfStatsRunner(unittest.TestCase):
         bad_sep = 'GT:DP,GQ'
         self.assertRaises(StatsException, parse_tags, bad_sep)
 
-
-class TestPlotChief(unittest.TestCase):
     def test_parse_plot_conf_file(self):
+        """Test parsing YAML config file"""
         exp = {'DP':
                    {'cumulative_distribution': {'ylabel': 'Y-label CDF'},
                     'plottypes': ['boxplot', 'cumulative_distribution'],
@@ -124,7 +142,6 @@ class TestPlotChief(unittest.TestCase):
         res = parse_plot_conf_file(yaml_fpath)
         self.assertDictEqual(exp, res)
 
-        # def test_
 
 if __name__ == '__main__':
     unittest.main()

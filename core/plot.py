@@ -1,7 +1,11 @@
 from collections import defaultdict
 
-import matplotlib.pyplot as plt
-import numpy as np
+try:
+    import matplotlib.pyplot as plt
+    import numpy as np
+except ImportError:
+    print("Matplotlib or numpy is not installed! Try 'pip3 install matplotlib && pip3 install numpy")
+    raise
 
 # generate numbers to plt.figure
 numgen = (x for x in range(30))
@@ -20,7 +24,7 @@ def get_boxplot(data, title='Default boxplot title', xlabel='Default X label',
     ax.get_xaxis().tick_bottom()
     ax.get_yaxis().tick_left()
     ax.set_yscale(yscale, nonposy='clip')
-    plt.grid(True, axis='both', which='minor')
+    plt.grid(True, axis='both', which='both')
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     return fig
@@ -58,7 +62,7 @@ def get_cumulative_distribution(data, title='Default cumulative histogram title'
     ax.set_xscale(xscale, nonposx='clip')
     ax.set_yscale(yscale, nonposy='clip')
     ax.plot(base[:-1], cumulative, c='blue')
-    plt.grid(True, axis='both', which='minor')
+    plt.grid(True, axis='both', which='both')
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     return fig

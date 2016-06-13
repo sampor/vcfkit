@@ -32,6 +32,7 @@
 ##contig=<ID=X,length=155270560,assembly=B37,md5=7e0e2e580297b7764e31dbc80c2540dd,species="Homo sapiens">
 ##contig=<ID=Y,length=59373566,assembly=B37,md5=1e86411d73e6f00a10590f976be01623,species="Homo sapiens">
 ##contig=<ID=M,length=16569,assembly=B37,md5=c68f52674c9fb33aef52dcf399755519,species="Homo sapiens">
+##FILTER=<ID=LowQual,Description="Low quality">
 ##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples With Data">
 ##INFO=<ID=AN,Number=1,Type=Integer,Description="Total number of alleles in called genotypes">
 ##INFO=<ID=AC,Number=A,Type=Integer,Description="Allele count in genotypes, for each ALT allele, in the same order as listed">

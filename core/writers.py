@@ -26,6 +26,6 @@ class PdfPlotWriter(object):
             for fig in self._plots:
                 pdf.savefig(fig, orientation='portrait')
                 d = pdf.infodict()
-                d['Title'] = 'Vcfkit report for sample {}'.format('E6')
+                d['Title'] = 'Vcfkit report'.format()
                 d['Author'] = 'Daniel Danis'
                 d['CreationDate'] = datetime.datetime.utcnow()
